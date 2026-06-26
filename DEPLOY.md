@@ -60,12 +60,29 @@ Si ton Traefik gère Let's Encrypt avec un certresolver :
 2. Décommente les 2 lignes `tls.*` de chaque service dans `docker-compose.prod.yml`.
 3. `docker compose -f docker-compose.prod.yml up -d`.
 
-## Mises à jour
+## Mises à jour : auto-déploiement (push-to-deploy)
+
+Le VPS se met à jour tout seul. Workflow : tu codes en local, tu `git push`,
+et le site se redéploie en moins d'une minute. Aucune action sur le VPS.
+
+Mécanisme : un cron lance `deploy.sh` chaque minute. Le script détecte un
+nouveau commit sur `origin/main`, fait `git reset --hard origin/main` puis
+`docker compose up -d --build`. Idempotent (ne fait rien sans changement),
+protégé contre les exécutions concurrentes par `flock`. Le `.env` (non suivi)
+est conservé.
+
+Installation du cron sur le VPS (une seule fois) :
 
 ```bash
-git pull
-docker compose -f docker-compose.prod.yml up -d --build
+chmod +x /home/hugo/Perso/imposteur/deploy.sh
+( crontab -l 2>/dev/null | grep -v imposteur-deploy
+  echo '* * * * * /usr/bin/flock -n /tmp/imposteur-deploy.lock /home/hugo/Perso/imposteur/deploy.sh >> /home/hugo/Perso/imposteur/deploy.log 2>&1'
+) | crontab -
 ```
+
+Suivre les déploiements : `tail -f /home/hugo/Perso/imposteur/deploy.log`.
+
+Déclencher un déploiement manuel : `/home/hugo/Perso/imposteur/deploy.sh`.
 
 ## Dépannage
 

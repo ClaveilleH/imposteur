@@ -48,10 +48,8 @@ services:
       - traefik.http.routers.impostor-api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)
       - traefik.http.routers.impostor-api.entrypoints=${TRAEFIK_ENTRYPOINT}
       - traefik.http.routers.impostor-api.priority=100
+      - traefik.http.routers.impostor-api.tls=true
       - traefik.http.services.impostor-api.loadbalancer.server.port=3000
-      # --- HTTPS (décommenter si tu utilises un certresolver Let's Encrypt) ---
-      # - traefik.http.routers.impostor-api.tls=true
-      # - traefik.http.routers.impostor-api.tls.certresolver=${CERT_RESOLVER}
 
   frontend:
     build: ./frontend
@@ -65,10 +63,8 @@ services:
       - traefik.http.routers.impostor-web.rule=Host(`${DOMAIN}`)
       - traefik.http.routers.impostor-web.entrypoints=${TRAEFIK_ENTRYPOINT}
       - traefik.http.routers.impostor-web.priority=1
+      - traefik.http.routers.impostor-web.tls=true
       - traefik.http.services.impostor-web.loadbalancer.server.port=80
-      # --- HTTPS (décommenter si tu utilises un certresolver Let's Encrypt) ---
-      # - traefik.http.routers.impostor-web.tls=true
-      # - traefik.http.routers.impostor-web.tls.certresolver=${CERT_RESOLVER}
 
 volumes:
   pgdata:
