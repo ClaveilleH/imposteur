@@ -5,6 +5,7 @@ import { PgThemeRepository } from './infrastructure/repositories/PgThemeReposito
 import { PgWordPairRepository } from './infrastructure/repositories/PgWordPairRepository';
 import { ThemeService } from './application/services/ThemeService';
 import { WordPairService } from './application/services/WordPairService';
+import { WordPairImportService } from './application/services/WordPairImportService';
 import { GameService } from './application/services/GameService';
 import { AdminService } from './application/services/AdminService';
 
@@ -19,6 +20,7 @@ import { AdminService } from './application/services/AdminService';
 export interface Container {
   themeService: ThemeService;
   wordPairService: WordPairService;
+  wordPairImportService: WordPairImportService;
   gameService: GameService;
   adminService: AdminService;
 }
@@ -30,6 +32,7 @@ export function buildContainer(pool: Pool = defaultPool): Container {
   return {
     themeService: new ThemeService(themeRepository),
     wordPairService: new WordPairService(wordPairRepository),
+    wordPairImportService: new WordPairImportService(themeRepository, wordPairRepository),
     gameService: new GameService(wordPairRepository),
     adminService: new AdminService(env.adminPassword),
   };

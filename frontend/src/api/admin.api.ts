@@ -54,6 +54,30 @@ export async function listWordPairs(password: string): Promise<WordPair[]> {
   return data.wordPairs;
 }
 
+export interface ImportItem {
+  wordA: string;
+  wordB: string;
+  difficulty: number;
+  themeNames: string[];
+}
+
+export interface ImportResult {
+  created: number;
+  createdThemeNames: string[];
+  wordPairs: WordPair[];
+}
+
+export async function bulkImportWordPairs(
+  password: string,
+  items: ImportItem[],
+): Promise<ImportResult> {
+  return apiRequest<ImportResult>('/admin/word-pairs/bulk', {
+    method: 'POST',
+    body: { items },
+    adminPassword: password,
+  });
+}
+
 export async function createWordPair(
   password: string,
   payload: { wordA: string; wordB: string; difficulty: number; themeIds: number[] },

@@ -37,6 +37,21 @@ export const updateWordPairSchema = z
   })
   .refine((d) => Object.keys(d).length > 0, { message: 'Aucun champ à mettre à jour.' });
 
+/** Import en masse de paires de mots (thèmes par nom, créés si absents). */
+export const bulkImportWordPairsSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        wordA: word,
+        wordB: word,
+        difficulty,
+        themeNames: z.array(name).min(1),
+      }),
+    )
+    .min(1)
+    .max(500),
+});
+
 /** Bascule active/inactive partagée. */
 export const setActiveSchema = z.object({ isActive: z.boolean() });
 

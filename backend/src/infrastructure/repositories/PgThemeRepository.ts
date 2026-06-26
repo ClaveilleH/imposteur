@@ -40,6 +40,14 @@ export class PgThemeRepository implements ThemeRepository {
     return rows[0] ? mapRow(rows[0]) : null;
   }
 
+  async findByName(name: string): Promise<Theme | null> {
+    const { rows } = await this.pool.query<ThemeRow>(
+      'SELECT * FROM themes WHERE lower(name) = lower($1) LIMIT 1',
+      [name],
+    );
+    return rows[0] ? mapRow(rows[0]) : null;
+  }
+
   async create(data: CreateThemeData): Promise<Theme> {
     const { rows } = await this.pool.query<ThemeRow>(
       'INSERT INTO themes (name) VALUES ($1) RETURNING *',

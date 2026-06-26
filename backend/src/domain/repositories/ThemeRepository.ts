@@ -16,6 +16,8 @@ export interface UpdateThemeData {
 export interface ThemeRepository {
   findAll(opts?: { activeOnly?: boolean }): Promise<Theme[]>;
   findById(id: number): Promise<Theme | null>;
+  /** Recherche par nom, insensible à la casse (null si absent). */
+  findByName(name: string): Promise<Theme | null>;
   create(data: CreateThemeData): Promise<Theme>;
   update(id: number, data: UpdateThemeData): Promise<Theme | null>;
 }

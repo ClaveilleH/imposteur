@@ -103,7 +103,8 @@ label {
   margin-bottom: 6px;
 }
 input,
-select {
+select,
+textarea {
   width: 100%;
   padding: 12px;
   border-radius: 10px;
@@ -111,6 +112,11 @@ select {
   background: var(--bg);
   color: var(--text);
   font-size: 1rem;
+}
+textarea {
+  resize: vertical;
+  font-family: ui-monospace, monospace;
+  line-height: 1.5;
 }
 .field {
   margin-bottom: 14px;

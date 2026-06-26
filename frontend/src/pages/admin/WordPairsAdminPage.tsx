@@ -9,6 +9,8 @@ import {
   createWordPair,
   updateWordPair,
   setWordPairActive,
+  bulkImportWordPairs,
+  type ImportItem,
 } from '../../api/admin.api';
 import type { Theme, WordPair } from '../../types';
 
@@ -24,6 +26,10 @@ export function WordPairsAdminPage() {
   const [wordB, setWordB] = useState('');
   const [difficulty, setDifficulty] = useState(1);
   const [selectedThemes, setSelectedThemes] = useState<number[]>([]);
+
+  // Import en masse
+  const [importText, setImportText] = useState('');
+  const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   async function reload() {
     try {
@@ -66,6 +72,73 @@ export function WordPairsAdminPage() {
       await reload();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Erreur.');
+    }
+  }
+
+  // Parse le texte collé : une paire par ligne « motA, motB, [difficulté,] thèmes ».
+  // Difficulté optionnelle (défaut 3). Thèmes multiples séparés par « ; ».
+  function parseImportLines(text: string): { items: ImportItem[]; errors: string[] } {
+    const items: ImportItem[] = [];
+    const errors: string[] = [];
+
+    text.split('\n').forEach((line, i) => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+      const parts = trimmed.split(',').map((p) => p.trim());
+      if (parts.length < 3) {
+        errors.push(`Ligne ${i + 1} : format « motA, motB, [difficulté,] thèmes »`);
+        return;
+      }
+      const wordA = parts[0] ?? '';
+      const wordB = parts[1] ?? '';
+
+      let difficulty = 3;
+      let themesRaw: string;
+      if (parts.length === 3) {
+        themesRaw = parts[2] ?? '';
+      } else {
+        const d = Number(parts[2]);
+        difficulty = Number.isInteger(d) && d >= 1 && d <= 5 ? d : 3;
+        themesRaw = parts.slice(3).join(',');
+      }
+      const themeNames = themesRaw
+        .split(';')
+        .map((t) => t.trim())
+        .filter(Boolean);
+
+      if (!wordA || !wordB) {
+        errors.push(`Ligne ${i + 1} : les deux mots sont requis`);
+        return;
+      }
+      if (themeNames.length === 0) {
+        errors.push(`Ligne ${i + 1} : au moins un thème est requis`);
+        return;
+      }
+      items.push({ wordA, wordB, difficulty, themeNames });
+    });
+
+    return { items, errors };
+  }
+
+  async function handleImport() {
+    setImportMsg(null);
+    const { items, errors } = parseImportLines(importText);
+    if (items.length === 0) {
+      setImportMsg({ ok: false, text: errors.join(' · ') || 'Rien à importer.' });
+      return;
+    }
+    try {
+      const res = await bulkImportWordPairs(password, items);
+      let text = `${res.created} paire(s) importée(s).`;
+      if (res.createdThemeNames.length) {
+        text += ` Thèmes créés : ${res.createdThemeNames.join(', ')}.`;
+      }
+      if (errors.length) text += ` ${errors.length} ligne(s) ignorée(s).`;
+      setImportMsg({ ok: true, text });
+      setImportText('');
+      await reload();
+    } catch (err) {
+      setImportMsg({ ok: false, text: err instanceof ApiError ? err.message : 'Erreur.' });
     }
   }
 
@@ -131,6 +204,34 @@ export function WordPairsAdminPage() {
         </div>
         <button className="btn btn-primary btn-block" style={{ marginTop: 12 }} onClick={handleCreate}>
           Ajouter la paire
+        </button>
+      </div>
+
+      {/* Import en masse */}
+      <div className="card">
+        <h2>Import en masse</h2>
+        <p className="muted" style={{ fontSize: '0.8rem', marginTop: 4 }}>
+          Une paire par ligne : <code>motA, motB, difficulté, thèmes</code>. Difficulté
+          optionnelle (défaut 3), plusieurs thèmes séparés par <code>;</code>. Les thèmes
+          inexistants sont créés automatiquement.
+        </p>
+        <textarea
+          rows={5}
+          placeholder={'Chat, Chien, 2, Animaux\nCafé, Thé, 1, Nourriture; Boissons\nLion, Tigre, Animaux'}
+          value={importText}
+          onChange={(e) => setImportText(e.target.value)}
+        />
+        {importMsg && (
+          <p className={importMsg.ok ? 'muted' : 'error'} style={{ marginTop: 8 }}>
+            {importMsg.text}
+          </p>
+        )}
+        <button
+          className="btn btn-primary btn-block"
+          style={{ marginTop: 8 }}
+          onClick={handleImport}
+        >
+          Importer la liste
         </button>
       </div>
 

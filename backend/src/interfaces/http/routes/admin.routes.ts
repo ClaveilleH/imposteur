@@ -9,6 +9,7 @@ import {
   updateThemeSchema,
   createWordPairSchema,
   updateWordPairSchema,
+  bulkImportWordPairsSchema,
   setActiveSchema,
   idParamSchema,
 } from '../schemas';
@@ -71,6 +72,18 @@ export function adminRoutes(container: Container) {
         const pair = await container.wordPairService.create(data);
         reply.status(201);
         return { wordPair: toWordPairDTO(pair) };
+      });
+
+      // Import en masse : thèmes par nom, créés automatiquement si absents.
+      admin.post('/admin/word-pairs/bulk', async (request, reply) => {
+        const { items } = bulkImportWordPairsSchema.parse(request.body);
+        const result = await container.wordPairImportService.import(items);
+        reply.status(201);
+        return {
+          created: result.created.length,
+          createdThemeNames: result.createdThemeNames,
+          wordPairs: result.created.map(toWordPairDTO),
+        };
       });
 
       admin.patch('/admin/word-pairs/:id', async (request) => {
