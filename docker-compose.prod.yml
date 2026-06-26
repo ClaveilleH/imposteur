@@ -66,6 +66,29 @@ services:
       - traefik.http.routers.impostor-web.tls=true
       - traefik.http.services.impostor-web.loadbalancer.server.port=80
 
+  # Adminer : interface web d'administration de la base PostgreSQL.
+  # Exposé sur ${ADMINER_DOMAIN}, protégé par une auth HTTP (BasicAuth Traefik).
+  # Le hash BasicAuth est dans le .env (ADMINER_BASICAUTH), jamais commité.
+  adminer:
+    image: adminer:4
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    networks:
+      - internal
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK}
+      - traefik.http.routers.impostor-adminer.rule=Host(`${ADMINER_DOMAIN}`)
+      - traefik.http.routers.impostor-adminer.entrypoints=${TRAEFIK_ENTRYPOINT}
+      - traefik.http.routers.impostor-adminer.tls=true
+      - traefik.http.routers.impostor-adminer.middlewares=impostor-adminer-auth
+      - traefik.http.middlewares.impostor-adminer-auth.basicauth.users=${ADMINER_BASICAUTH}
+      - traefik.http.services.impostor-adminer.loadbalancer.server.port=8080
+
 volumes:
   pgdata:
 
