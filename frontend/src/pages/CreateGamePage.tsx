@@ -12,13 +12,16 @@ const MAX_PLAYERS = 20;
 export function CreateGamePage() {
   const navigate = useNavigate();
   const setGame = useGameStore((s) => s.setGame);
+  const saveSettings = useGameStore((s) => s.saveSettings);
+  const lastSettings = useGameStore((s) => s.lastSettings);
 
+  // Valeurs initiales : on réutilise les derniers paramètres saisis si présents.
   const [themes, setThemes] = useState<Theme[]>([]);
-  const [selectedThemes, setSelectedThemes] = useState<number[]>([]);
-  const [names, setNames] = useState<string[]>(['', '', '']);
-  const [numberOfImpostors, setNumberOfImpostors] = useState(1);
-  const [numberOfSpies, setNumberOfSpies] = useState(0);
-  const [difficulty, setDifficulty] = useState(1);
+  const [selectedThemes, setSelectedThemes] = useState<number[]>(lastSettings?.themeIds ?? []);
+  const [names, setNames] = useState<string[]>(lastSettings?.playerNames ?? ['', '', '']);
+  const [numberOfImpostors, setNumberOfImpostors] = useState(lastSettings?.numberOfImpostors ?? 1);
+  const [numberOfSpies, setNumberOfSpies] = useState(lastSettings?.numberOfSpies ?? 0);
+  const [difficulty, setDifficulty] = useState(lastSettings?.difficulty ?? 1);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -61,17 +64,32 @@ export function CreateGamePage() {
     );
   }
 
+  // Imposteurs : entre 1 et (joueurs − espions − 1), pour garder au moins 1 civil.
+  function changeImpostors(delta: number) {
+    const max = playerCount - numberOfSpies - 1;
+    setNumberOfImpostors((prev) => Math.max(1, Math.min(max, prev + delta)));
+  }
+
+  // Espions : entre 0 et (joueurs − imposteurs − 1).
+  function changeSpies(delta: number) {
+    const max = playerCount - numberOfImpostors - 1;
+    setNumberOfSpies((prev) => Math.max(0, Math.min(max, prev + delta)));
+  }
+
   async function handleSubmit() {
     setError(null);
     setLoading(true);
     try {
-      const assignment = await createGame({
+      const settings = {
         playerNames: names.map((n) => n.trim()),
         themeIds: selectedThemes,
         numberOfImpostors,
         numberOfSpies,
         difficulty,
-      });
+      };
+      // Mémorise les paramètres pour la prochaine partie avant l'appel réseau.
+      saveSettings(settings);
+      const assignment = await createGame(settings);
       setGame(assignment);
       navigate('/reveal');
     } catch (err) {
@@ -133,21 +151,31 @@ export function CreateGamePage() {
       <div className="row">
         <div className="field">
           <label>Imposteurs</label>
-          <input
-            type="number"
-            min={1}
-            value={numberOfImpostors}
-            onChange={(e) => setNumberOfImpostors(Number(e.target.value))}
-          />
+          <div className="row">
+            <button className="btn" onClick={() => changeImpostors(-1)}>
+              −
+            </button>
+            <div className="btn" style={{ pointerEvents: 'none' }}>
+              {numberOfImpostors}
+            </div>
+            <button className="btn" onClick={() => changeImpostors(1)}>
+              +
+            </button>
+          </div>
         </div>
         <div className="field">
           <label>Espions</label>
-          <input
-            type="number"
-            min={0}
-            value={numberOfSpies}
-            onChange={(e) => setNumberOfSpies(Number(e.target.value))}
-          />
+          <div className="row">
+            <button className="btn" onClick={() => changeSpies(-1)}>
+              −
+            </button>
+            <div className="btn" style={{ pointerEvents: 'none' }}>
+              {numberOfSpies}
+            </div>
+            <button className="btn" onClick={() => changeSpies(1)}>
+              +
+            </button>
+          </div>
         </div>
       </div>
 

@@ -72,7 +72,8 @@ export function validateComposition(params: {
  *   l'autre devient le mot des imposteurs. Ainsi un imposteur voit « un mot » comme
  *   tout le monde et ne sait pas qu'il est l'imposteur.
  * - Les rôles sont tirés au sort uniformément.
- * - Le premier joueur (qui lance le débat) est tiré au sort parmi tous les joueurs.
+ * - Le premier joueur (qui lance le débat) est tiré au sort parmi les joueurs
+ *   ayant un mot — jamais un espion.
  */
 export function buildGameAssignment(params: BuildAssignmentParams): GameAssignment {
   const { playerNames, numberOfImpostors, numberOfSpies, wordPair } = params;
@@ -115,8 +116,11 @@ export function buildGameAssignment(params: BuildAssignmentParams): GameAssignme
     return { order, name, role, word };
   });
 
-  // 3. Premier joueur.
-  const firstPlayerOrder = randomInt(players.length, rng);
+  // 3. Premier joueur : tiré parmi les joueurs qui possèdent un mot.
+  //    Un espion ne peut donc jamais commencer (il n'aurait rien à dire).
+  //    L'ensemble est toujours non vide (≥ 1 civil garanti par la validation).
+  const eligibleFirst = players.filter((p) => p.role !== 'spy');
+  const firstPlayerOrder = eligibleFirst[randomInt(eligibleFirst.length, rng)]!.order;
 
   return {
     players,

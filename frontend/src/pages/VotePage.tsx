@@ -35,8 +35,10 @@ export function VotePage() {
   }
 
   function newGame() {
+    // On efface la partie en cours mais on garde les paramètres saisis,
+    // puis on revient sur l'écran de création (pré-rempli).
     reset();
-    navigate('/');
+    navigate('/create');
   }
 
   return (
