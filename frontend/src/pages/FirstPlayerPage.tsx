@@ -1,5 +1,6 @@
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
+import { HomeButton } from '../components/HomeButton';
 import { useGameStore } from '../store/gameStore';
 
 /** Annonce le joueur qui commence le débat. */
@@ -15,6 +16,7 @@ export function FirstPlayerPage() {
 
   return (
     <Layout>
+      <HomeButton />
       <div className="spacer" />
       <div className="center">
         <p className="muted">C'est à</p>

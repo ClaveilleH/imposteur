@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
+import { HomeButton } from '../components/HomeButton';
 import { useGameStore } from '../store/gameStore';
 import type { Role } from '../types';
 
@@ -43,6 +44,7 @@ export function VotePage() {
 
   return (
     <Layout>
+      <HomeButton />
       <h1>Vote</h1>
       <p className="muted">Cliquez sur le joueur à éliminer.</p>
 

@@ -17,6 +17,7 @@ export function WordPairsAdminPage() {
   const [themes, setThemes] = useState<Theme[]>([]);
   const [pairs, setPairs] = useState<WordPair[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
   // Formulaire de création
   const [wordA, setWordA] = useState('');
@@ -80,6 +81,17 @@ export function WordPairsAdminPage() {
 
   const themeName = (id: number) => themes.find((t) => t.id === id)?.name ?? `#${id}`;
 
+  // Filtrage par mot (A ou B) ou par nom de thème, insensible à la casse.
+  const q = search.trim().toLowerCase();
+  const filtered = q
+    ? pairs.filter(
+        (p) =>
+          p.wordA.toLowerCase().includes(q) ||
+          p.wordB.toLowerCase().includes(q) ||
+          p.themeIds.some((id) => themeName(id).toLowerCase().includes(q)),
+      )
+    : pairs;
+
   return (
     <Layout>
       <Link to="/admin" className="muted">
@@ -122,8 +134,18 @@ export function WordPairsAdminPage() {
         </button>
       </div>
 
+      {/* Recherche */}
+      <input
+        placeholder="Rechercher (mot ou thème)…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+      <p className="muted" style={{ fontSize: '0.8rem', margin: 0 }}>
+        {filtered.length} paire(s){q ? ` sur ${pairs.length}` : ''}
+      </p>
+
       {/* Liste */}
-      {pairs.map((p) => (
+      {filtered.map((p) => (
         <div key={p.id} className={`list-item ${p.isActive ? '' : 'inactive'}`}>
           <div>
             <div>

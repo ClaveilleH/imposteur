@@ -177,8 +177,19 @@ select {
   justify-content: space-between;
   gap: 10px;
   background: var(--surface);
+  color: var(--text);
   border-radius: 10px;
   padding: 12px 14px;
+}
+
+/* Quand un .list-item est un <button> (ex. liste de vote), on enlève le style
+   natif du bouton (texte noir, bordure) et on garde le texte clair. */
+button.list-item {
+  font: inherit;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
 }
 .list-item.inactive {
   opacity: 0.5;

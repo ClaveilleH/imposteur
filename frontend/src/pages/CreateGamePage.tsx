@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
+import { HomeButton } from '../components/HomeButton';
 import { fetchActiveThemes, createGame } from '../api/games.api';
 import { ApiError } from '../api/client';
 import { useGameStore } from '../store/gameStore';
@@ -21,14 +22,25 @@ export function CreateGamePage() {
   const [names, setNames] = useState<string[]>(lastSettings?.playerNames ?? ['', '', '']);
   const [numberOfImpostors, setNumberOfImpostors] = useState(lastSettings?.numberOfImpostors ?? 1);
   const [numberOfSpies, setNumberOfSpies] = useState(lastSettings?.numberOfSpies ?? 0);
-  const [difficulty, setDifficulty] = useState(lastSettings?.difficulty ?? 1);
+  const [difficulty, setDifficulty] = useState(lastSettings?.difficulty ?? 3);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchActiveThemes()
-      .then(setThemes)
+      .then((loaded) => {
+        setThemes(loaded);
+        // Première visite (aucun paramètre mémorisé) : on coche Animaux + Nourriture par défaut.
+        if (!lastSettings) {
+          const defaults = loaded
+            .filter((t) => t.name === 'Animaux' || t.name === 'Nourriture')
+            .map((t) => t.id);
+          setSelectedThemes(defaults);
+        }
+      })
       .catch(() => setError('Impossible de charger les thèmes.'));
+    // lastSettings est lu une seule fois au montage (comportement « première visite »).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const playerCount = names.length;
@@ -62,6 +74,13 @@ export function CreateGamePage() {
     setSelectedThemes((prev) =>
       prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id],
     );
+  }
+
+  const allThemesSelected = themes.length > 0 && selectedThemes.length === themes.length;
+
+  // Coche tous les thèmes (ou les décoche tous si déjà tous cochés).
+  function toggleAllThemes() {
+    setSelectedThemes(allThemesSelected ? [] : themes.map((t) => t.id));
   }
 
   // Imposteurs : entre 1 et (joueurs − espions − 1), pour garder au moins 1 civil.
@@ -101,6 +120,7 @@ export function CreateGamePage() {
 
   return (
     <Layout>
+      <HomeButton />
       <h1>Nouvelle partie</h1>
       {error && <div className="error">{error}</div>}
 
@@ -133,8 +153,19 @@ export function CreateGamePage() {
       </div>
 
       <div className="field">
-        <label>Thèmes</label>
-        <div className="chips">
+        <div className="row" style={{ alignItems: 'center' }}>
+          <label style={{ margin: 0 }}>Thèmes</label>
+          <button
+            type="button"
+            className="btn"
+            style={{ flex: 0, padding: '6px 12px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
+            onClick={toggleAllThemes}
+            disabled={themes.length === 0}
+          >
+            {allThemesSelected ? 'Tout décocher' : 'Tous les thèmes'}
+          </button>
+        </div>
+        <div className="chips" style={{ marginTop: 8 }}>
           {themes.map((t) => (
             <span
               key={t.id}
@@ -181,13 +212,18 @@ export function CreateGamePage() {
 
       <div className="field">
         <label>Difficulté : {difficulty}</label>
-        <input
-          type="range"
-          min={1}
-          max={5}
-          value={difficulty}
-          onChange={(e) => setDifficulty(Number(e.target.value))}
-        />
+        <div className="row">
+          {[1, 2, 3, 4, 5].map((level) => (
+            <button
+              key={level}
+              type="button"
+              className={`btn ${level <= difficulty ? 'btn-primary' : ''}`}
+              onClick={() => setDifficulty(level)}
+            >
+              {level}
+            </button>
+          ))}
+        </div>
       </div>
 
       <p className="muted">

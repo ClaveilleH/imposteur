@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
+import { HomeButton } from '../components/HomeButton';
 import { useGameStore } from '../store/gameStore';
 
 /**
@@ -39,6 +40,7 @@ export function RevealPage() {
   if (!revealed) {
     return (
       <Layout>
+        <HomeButton />
         <div className="spacer" />
         <div className="center">
           <p className="muted">Passe l'appareil à</p>

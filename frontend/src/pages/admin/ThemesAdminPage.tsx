@@ -11,6 +11,7 @@ export function ThemesAdminPage() {
   const [themes, setThemes] = useState<Theme[]>([]);
   const [newName, setNewName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
   async function reload() {
     try {
@@ -68,7 +69,16 @@ export function ThemesAdminPage() {
         </button>
       </div>
 
-      {themes.map((t) => (
+      <input
+        placeholder="Rechercher un thème…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        style={{ marginTop: 4 }}
+      />
+
+      {themes
+        .filter((t) => t.name.toLowerCase().includes(search.trim().toLowerCase()))
+        .map((t) => (
         <div key={t.id} className={`list-item ${t.isActive ? '' : 'inactive'}`}>
           <span>{t.name}</span>
           <div className="row" style={{ flex: 0, gap: 8 }}>
