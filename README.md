@@ -32,6 +32,12 @@ npm run dev          # http://localhost:5173
 
 Mot de passe admin par défaut : voir `ADMIN_PASSWORD` dans `backend/.env`.
 
+## Déploiement (VPS + Traefik)
+
+Voir **[DEPLOY.md](./DEPLOY.md)** : Dockerfiles + `docker-compose.prod.yml`
+branché sur un Traefik existant (un seul domaine, front à la racine et API
+sous `/api`).
+
 ## Organisation du dépôt
 
 ```

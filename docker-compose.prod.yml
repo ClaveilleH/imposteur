@@ -1,0 +1,82 @@
+# Déploiement derrière un Traefik existant (réseau Docker externe).
+#
+# Routage : un seul domaine (${DOMAIN}).
+#   - /api      -> backend  (routeur prioritaire)
+#   - tout le reste -> frontend (nginx, SPA)
+#
+# Lancement :
+#   cp .env.prod.example .env
+#   # éditer .env (DOMAIN, TRAEFIK_NETWORK, mots de passe…)
+#   docker compose -f docker-compose.prod.yml up -d --build
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: impostor
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: impostor
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U impostor -d impostor"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://impostor:${POSTGRES_PASSWORD}@db:5432/impostor
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      CORS_ORIGIN: https://${DOMAIN}
+    networks:
+      - internal
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK}
+      # Routeur API : domaine + préfixe /api, priorité élevée pour passer devant le front.
+      - traefik.http.routers.impostor-api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)
+      - traefik.http.routers.impostor-api.entrypoints=${TRAEFIK_ENTRYPOINT}
+      - traefik.http.routers.impostor-api.priority=100
+      - traefik.http.services.impostor-api.loadbalancer.server.port=3000
+      # --- HTTPS (décommenter si tu utilises un certresolver Let's Encrypt) ---
+      # - traefik.http.routers.impostor-api.tls=true
+      # - traefik.http.routers.impostor-api.tls.certresolver=${CERT_RESOLVER}
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    networks:
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK}
+      # Routeur front : tout le domaine (le routeur API plus prioritaire capte /api).
+      - traefik.http.routers.impostor-web.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.impostor-web.entrypoints=${TRAEFIK_ENTRYPOINT}
+      - traefik.http.routers.impostor-web.priority=1
+      - traefik.http.services.impostor-web.loadbalancer.server.port=80
+      # --- HTTPS (décommenter si tu utilises un certresolver Let's Encrypt) ---
+      # - traefik.http.routers.impostor-web.tls=true
+      # - traefik.http.routers.impostor-web.tls.certresolver=${CERT_RESOLVER}
+
+volumes:
+  pgdata:
+
+networks:
+  # Réseau externe déjà créé par ta stack Traefik.
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK}
+  # Réseau privé db <-> backend (non exposé).
+  internal:
