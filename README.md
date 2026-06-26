@@ -34,9 +34,14 @@ Mot de passe admin par défaut : voir `ADMIN_PASSWORD` dans `backend/.env`.
 
 ## Déploiement (VPS + Traefik)
 
+En production : **https://undercover.claveille.fr**
+
 Voir **[DEPLOY.md](./DEPLOY.md)** : Dockerfiles + `docker-compose.prod.yml`
 branché sur un Traefik existant (un seul domaine, front à la racine et API
 sous `/api`).
+
+**Push-to-deploy** : un `git push` sur `main` redéploie automatiquement le VPS
+(cron + `deploy.sh`, en moins d'une minute). Détails dans DEPLOY.md.
 
 ## Organisation du dépôt
 
